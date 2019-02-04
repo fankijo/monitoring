@@ -1,7 +1,5 @@
 #!/bin/bash
-# Template by nixCraft project
-
-# Edited and optimized by Johannes Fankhauser 2017-10-05
+# copyright fankijo
 
 # This simple Script pings all hosts in the HOSTS array. If there is
 # no ping answer from the host, it sends an SMS to the phonenumber
@@ -33,7 +31,7 @@ HOSTDESCRIPTION[8]='fankh.de'
 
 # set counter how often the host should be pinged
 PINGCOUNT=2
-PHONENUMBER=004915153094283
+PHONENUMBER=0049123456789
 SCRIPTPATH=/scripts
 #If host would trigge rsms again, dont send sms if last sms was less then x seconds ago
 NOTIFICATIONSLEEPTIME=10800
