@@ -1,0 +1,81 @@
+#!/bin/bash
+# Template by nixCraft project
+
+# Edited and optimized by Johannes Fankhauser 2017-10-05
+
+# This simple Script pings all hosts in the HOSTS array. If there is
+# no ping answer from the host, it sends an SMS to the phonenumber
+# configured in the PHONENUMBER var
+
+# hosts to ping
+HOST[0]='127.0.0.1'
+HOST[1]='1.1.1.1'
+HOST[2]='10.0.1.1'
+HOST[3]='10.0.1.29'
+HOST[4]='1.2.5.3' #loopback ip
+HOST[5]='10.0.1.19'
+HOST[6]='10.0.1.18'
+HOST[7]='10.0.1.2'
+HOST[8]='123.123.123.123'
+
+
+# define description for host (for exampe if the host is an IP add some description to it)
+HOSTDESCRIPTION[0]='loopback address'
+HOSTDESCRIPTION[1]='outgoing network connection'
+HOSTDESCRIPTION[2]='FritzBox'
+HOSTDESCRIPTION[3]='AP-Buero'
+HOSTDESCRIPTION[4]='AP-Franz'
+HOSTDESCRIPTION[5]='AP-Fruehstuecksraum'
+HOSTDESCRIPTION[6]='AP-Gartenhuette'
+HOSTDESCRIPTION[7]='SW-Dachboden'
+HOSTDESCRIPTION[8]='fankh.de'
+
+
+# set counter how often the host should be pinged
+PINGCOUNT=2
+PHONENUMBER=004915153094283
+SCRIPTPATH=/scripts
+#If host would trigge rsms again, dont send sms if last sms was less then x seconds ago
+NOTIFICATIONSLEEPTIME=10800
+
+
+
+
+for (( i=0; i<${#HOST[@]}; i++))
+do
+        echo ping ${HOST[$i]} ${HOSTDESCRIPTION[$i]}
+
+        #Pings specified host. If ping gets answered variable counter is being counted +1
+        count=$(ping -c $PINGCOUNT ${HOST[$i]} | grep 'received' | awk -F',' '{ print $2 }' | awk '{ print $1 }')
+
+        #if cunter is 0 (no ping got answered) then send sms
+        if [ $count -eq 0 ]; then
+
+                # send SMS if theres no ping answer
+                echo -e "-> \e[1;31mping failed\e[0m"
+
+                if [ ! -e "$SCRIPTPATH/timestamps/${HOST[$i]}" ]
+                then
+                        #creating timestamp file if it doesnt exist
+                        touch "$SCRIPTPATH/timestamps/${HOST[$i]}"
+                        echo 0 > "$SCRIPTPATH/timestamps/${HOST[$i]}"
+                fi
+
+                TIMENOW="$(date +%s)"
+                HOSTTIMESTAMP="$(cat "$SCRIPTPATH/timestamps/${HOST[$i]}")"
+
+                if ((  $(expr $TIMENOW - $HOSTTIMESTAMP) > 3600 ));
+                then
+                        #Command to send sms
+                        echo -e "Host:" ${HOST[$i]}" ("${HOSTDESCRIPTION[$i]}")\nis down.\n"$(date) | sudo gammu-smsd-inject TEXT $PHONENUMBER
+
+                        #write timestamp to file
+                        echo $(date +%s) > "$SCRIPTPATH/timestamps/${HOST[$i]}"
+
+                else
+                        echo Not sending sms.
+                fi
+        else
+                echo -e "-> \e[1;32mOK\e[0m\n"
+        fi
+done
